@@ -6,6 +6,7 @@ import android.view.MotionEvent.ACTION_UP
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.accessibility.AccessibilityEvent
 import android.widget.OverScroller
 import androidx.interpolator.view.animation.FastOutLinearInInterpolator
 import com.alamkanak.weekview.Direction.LEFT
@@ -44,6 +45,8 @@ internal class WeekViewGestureHandler<T>(
     private val listener: Listener
 ) : GestureDetector.SimpleOnGestureListener() {
 
+    internal var currentSelectedEvent: EventChip<*>? = null
+
     private val touchHandler = WeekViewTouchHandler(config)
 
     private val scroller = OverScroller(view.context, FastOutLinearInInterpolator())
@@ -71,9 +74,10 @@ internal class WeekViewGestureHandler<T>(
                 listener.onScaled()
                 return true
             }
+
         })
 
-    private var isZooming: Boolean = false
+    internal var isZooming: Boolean = false
 
     private val minimumFlingVelocity = view.scaledMinimumFlingVelocity
     private val scaledTouchSlop = view.scaledTouchSlop
@@ -224,9 +228,16 @@ internal class WeekViewGestureHandler<T>(
         scroller.fling(startX, startY, velocityX, velocityY, minX, maxX, minY, maxY)
     }
 
-    override fun onSingleTapConfirmed(
-        e: MotionEvent
-    ): Boolean {
+    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        currentSelectedEvent = findHitEvent(e)
+        val xy = currentSelectedEvent
+        if (xy != null && xy.rect != null) {
+            view.mWeekViewTouchHelper.invalidateVirtualView(xy.event.id.toInt())
+            view.postInvalidate()
+            view.mWeekViewTouchHelper.sendEventForVirtualView(xy.event.id.toInt(), AccessibilityEvent.TYPE_VIEW_CLICKED)
+        }
+
+
         onEventClickListener?.let { listener ->
             val eventChip = findHitEvent(e) ?: return@let
             if (eventChip.event.isNotAllDay && e.isInHeader) {
@@ -287,7 +298,7 @@ internal class WeekViewGestureHandler<T>(
         }
     }
 
-    private fun findHitEvent(
+    fun findHitEvent(
         e: MotionEvent
     ): EventChip<T>? {
         val candidates = chipCache.allEventChips.filter { it.isHit(e) }
@@ -341,6 +352,13 @@ internal class WeekViewGestureHandler<T>(
     }
 
     fun onTouchEvent(event: MotionEvent): Boolean {
+        /*currentSelectedEvent = findHitEvent(event)
+        val xy = currentSelectedEvent
+        if (xy != null && xy.rect != null) {
+            view.mWeekViewTouchHelper.invalidateVirtualView(xy.event.id.toInt())
+            view.postInvalidate()
+            view.mWeekViewTouchHelper.sendEventForVirtualView(xy.event.id.toInt(), AccessibilityEvent.TYPE_VIEW_CLICKED)
+        }*/
         scaleDetector.onTouchEvent(event)
         val value = gestureDetector.onTouchEvent(event)
 

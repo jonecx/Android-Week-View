@@ -3,10 +3,10 @@
 buildscript {
     ext {
         buildConfig = [
-                minSdk: 15,
+                minSdk: 19,
                 minSdkJsr310: 26,
-                compileSdk: 29,
-                targetSdk: 29
+                compileSdk: 28,
+                targetSdk: 28
         ]
         versions = [
                 kotlin: '1.3.41',

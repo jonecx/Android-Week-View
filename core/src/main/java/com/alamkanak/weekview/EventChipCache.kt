@@ -44,4 +44,6 @@ internal class EventChipCache<T> {
         allDayEventChipsByDate.clear()
         normalEventChipsByDate.clear()
     }
+
+    fun size() = allEventChips.size
 }

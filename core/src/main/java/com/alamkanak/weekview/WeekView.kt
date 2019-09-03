@@ -7,10 +7,15 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Parcelable
 import android.util.AttributeSet
+import android.util.Log
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.ViewCompat
 import com.alamkanak.weekview.Constants.UNINITIALIZED
+import java.lang.Exception
+import java.lang.RuntimeException
 import java.util.Calendar
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -21,23 +26,47 @@ class WeekView<T> @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr), WeekViewViewState.Listener {
 
+    internal val mWeekViewTouchHelper = WeekViewTouchHelper(this)
+    internal var selectedEventChip: EventChip<T>? = null
+
+    override fun dispatchHoverEvent(event: MotionEvent?): Boolean {
+        if (event == null || event.action == MotionEvent.ACTION_MOVE)
+            return false
+        gestureHandler.currentSelectedEvent = gestureHandler.findHitEvent(event)
+        selectedEventChip = gestureHandler.findHitEvent(event)
+        if (selectedEventChip == null)
+            return false
+        return try {
+            if (mWeekViewTouchHelper.dispatchHoverEvent(event)) true else super.dispatchHoverEvent(event)
+        } catch (e: RuntimeException) {
+            return false
+        }
+    }
+
     private val configWrapper: WeekViewConfigWrapper by lazy {
+        ViewCompat.setAccessibilityDelegate(this, mWeekViewTouchHelper)
         val config = WeekViewConfig(context, attrs)
         WeekViewConfigWrapper(this, config)
     }
 
-    private val gestureListener = object : WeekViewGestureHandler.Listener {
-        override fun onScaled() = invalidate()
-        override fun onScrolled() = ViewCompat.postInvalidateOnAnimation(this@WeekView)
+    internal val gestureListener = object : WeekViewGestureHandler.Listener {
+        override fun onScaled() {
+            sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED)
+            invalidate()
+        }
+
+        override fun onScrolled() {
+            sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED)
+            ViewCompat.postInvalidateOnAnimation(this@WeekView)
+        }
     }
 
     private val cache = WeekViewCache<T>()
     private val eventCache = EventCache<T>()
-    private val eventChipCache = EventChipCache<T>()
+    internal val eventChipCache = EventChipCache<T>()
 
     private val viewState = WeekViewViewState(configWrapper, this)
-    private val gestureHandler =
-        WeekViewGestureHandler(this, configWrapper, eventChipCache, gestureListener)
+    internal val gestureHandler = WeekViewGestureHandler(this, configWrapper, eventChipCache, gestureListener)
 
     private val drawingContext = DrawingContext(configWrapper)
 
