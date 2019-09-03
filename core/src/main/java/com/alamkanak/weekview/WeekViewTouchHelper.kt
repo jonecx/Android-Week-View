@@ -10,7 +10,7 @@ import androidx.core.view.accessibility.AccessibilityEventCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.customview.widget.ExploreByTouchHelper
 
-internal class WeekViewTouchHelper(val host: View) : ExploreByTouchHelper(host) {
+internal class WeekViewTouchHelper(host: View) : ExploreByTouchHelper(host) {
 
     private val weekView = host as WeekView<*>
 
@@ -24,8 +24,8 @@ internal class WeekViewTouchHelper(val host: View) : ExploreByTouchHelper(host) 
     override fun getVisibleVirtualViews(virtualViewIds: MutableList<Int>?) {
         val count = weekView.eventChipCache.size()
         if (count > 0 && weekView.selectedEventChip != null) {
-            for (event in weekView.eventChipCache.allEventChips) {
-                virtualViewIds?.add(weekView.selectedEventChip?.event?.id!!.toInt())
+            for (eventChip in weekView.eventChipCache.allEventChips) {
+                virtualViewIds?.add(eventChip.event.id.toInt())
             }
         }
     }
@@ -41,14 +41,15 @@ internal class WeekViewTouchHelper(val host: View) : ExploreByTouchHelper(host) 
     }
 
     override fun onPopulateNodeForVirtualView(virtualViewId: Int, node: AccessibilityNodeInfoCompat) {
-        val desc = getContentDescriptionForEvent()
-        node.contentDescription = desc
+        node.contentDescription = getContentDescriptionForEvent()
         node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
 
         val rectF = weekView.selectedEventChip?.rect
         if (rectF != null) {
             val bounds = Rect(rectF.left.toInt(), rectF.top.toInt(), rectF.right.toInt(), rectF.bottom.toInt())
             node.setBoundsInParent(bounds)
+        } else {
+            node.setBoundsInParent(Rect(0,0,0,0))
         }
     }
 
@@ -57,7 +58,7 @@ internal class WeekViewTouchHelper(val host: View) : ExploreByTouchHelper(host) 
     }
 
     private fun getContentDescriptionForEvent(): String? {
-        return weekView.selectedEventChip?.event?.title
+        return weekView.selectedEventChip?.event?.title ?: ""
     }
 
 }

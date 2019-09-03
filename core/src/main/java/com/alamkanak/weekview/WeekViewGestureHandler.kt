@@ -231,7 +231,7 @@ internal class WeekViewGestureHandler<T>(
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
         currentSelectedEvent = findHitEvent(e)
         val xy = currentSelectedEvent
-        if (xy != null && xy.rect != null) {
+        if (xy != null && xy.rect != null &&e.action != MotionEvent.ACTION_MOVE) {
             view.mWeekViewTouchHelper.invalidateVirtualView(xy.event.id.toInt())
             view.postInvalidate()
             view.mWeekViewTouchHelper.sendEventForVirtualView(xy.event.id.toInt(), AccessibilityEvent.TYPE_VIEW_CLICKED)
@@ -352,13 +352,6 @@ internal class WeekViewGestureHandler<T>(
     }
 
     fun onTouchEvent(event: MotionEvent): Boolean {
-        /*currentSelectedEvent = findHitEvent(event)
-        val xy = currentSelectedEvent
-        if (xy != null && xy.rect != null) {
-            view.mWeekViewTouchHelper.invalidateVirtualView(xy.event.id.toInt())
-            view.postInvalidate()
-            view.mWeekViewTouchHelper.sendEventForVirtualView(xy.event.id.toInt(), AccessibilityEvent.TYPE_VIEW_CLICKED)
-        }*/
         scaleDetector.onTouchEvent(event)
         val value = gestureDetector.onTouchEvent(event)
 
